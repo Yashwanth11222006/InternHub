@@ -1,31 +1,83 @@
-'use client';
+"use client";
 
+import React, { useEffect, useState } from "react";
 import Sidebar from '@/components/layout/Sidebar';
 import StudentNavbar from '@/components/layout/StudentNavbar';
 import TopBar from '@/components/layout/TopBar';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { useAuthContext } from '@/lib/auth-context';
 
-function getRole(pathname: string): 'student' | 'recruiter' {
+function getRole(pathname: string): 'student' | 'recruiter' | 'admin' {
     if (pathname.includes('/recruiter')) {
         return 'recruiter';
+    }
+    if (pathname.includes('/admin')) {
+        return 'admin';
     }
     return 'student';
 }
 
-function getUserName(role: 'student' | 'recruiter'): string {
-    return role === 'recruiter' ? 'Priya Sharma' : 'Arjun Mehta';
-}
-
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
+    const router = useRouter();
     const role = getRole(pathname);
-    const userName = getUserName(role);
+    const { profile, user, loading: authLoading, userRole } = useAuthContext();
+    const [userName, setUserName] = useState<string>('');
+
+    // Role-based access guard: redirect users to their correct dashboard
+    useEffect(() => {
+        if (authLoading) return;
+
+        // Not logged in → send to login
+        if (!user) {
+            router.push('/login');
+            return;
+        }
+
+        // If user is accessing a section they don't belong to, redirect them
+        if (userRole && role !== userRole) {
+            switch (userRole) {
+                case 'admin':
+                    router.push('/admin');
+                    break;
+                case 'recruiter':
+                    router.push('/recruiter/dashboard');
+                    break;
+                case 'student':
+                    router.push('/home');
+                    break;
+            }
+        }
+    }, [authLoading, user, userRole, role, router]);
+
+    useEffect(() => {
+        if (authLoading) return;
+
+        if (!user) {
+            setUserName(role === 'recruiter' ? 'Recruiter' : role === 'admin' ? 'Admin' : 'Student');
+            return;
+        }
+
+        if (profile) {
+            if (role === 'admin') {
+                setUserName(profile.name || user.email?.split('@')[0] || 'Admin');
+            } else if (role === 'recruiter' && profile.profile && 'recruiter_name' in profile.profile) {
+                setUserName(profile.profile.recruiter_name || user.email?.split('@')[0] || 'Recruiter');
+            } else if (role === 'student' && profile.profile && 'full_name' in profile.profile) {
+                setUserName(profile.profile.full_name || user.email?.split('@')[0] || 'Student');
+            } else {
+                setUserName(user.email?.split('@')[0] || (role === 'recruiter' ? 'Recruiter' : role === 'admin' ? 'Admin' : 'Student'));
+            }
+        } else {
+            setUserName(user.email?.split('@')[0] || (role === 'recruiter' ? 'Recruiter' : role === 'admin' ? 'Admin' : 'Student'));
+        }
+    }, [profile, user, role, authLoading]);
 
     // Sidebar logic for students: only on specific management pages
     const studentSidebarRoutes = ['/dashboard', '/activity', '/profile'];
-    const showSidebar = role === 'recruiter' || studentSidebarRoutes.includes(pathname);
+    const showSidebar = role === 'admin' || role === 'recruiter' || studentSidebarRoutes.includes(pathname);
 
     // For students, the floating navbar is for non-workspace pages (Home, Community, Internships)
     const showStudentNavbar = role === 'student' && !showSidebar;
@@ -36,7 +88,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     const isHomePage = pathname === '/home';
 
     return (
-        <div className="min-h-screen bg-[#FAF9F6] flex flex-col">
+        <div className="min-h-screen bg-white flex flex-col">
             {/* Floating Top Navigation for Students */}
             {showStudentNavbar && <StudentNavbar userName={userName} />}
 
@@ -56,10 +108,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     {/* Consistent Spacer for Students (except Home page for behind-navbar effect) */}
                     {showStudentNavbar && !isHomePage && <div className="h-24 md:h-32 w-full shrink-0" />}
 
-                    {/* Consistent TopBar for Workspace Pages (Student or Recruiter) */}
-                    {(role === 'recruiter' || showStudentTopBar) && (
+                    {/* Consistent TopBar for Workspace Pages (Student, Recruiter, or Admin) */}
+                    {(role === 'admin' || role === 'recruiter' || showStudentTopBar) && (
                         <TopBar
-                            title={role === 'recruiter' ? 'Recruiter Hub' : 'Student Workspace'}
+                            title={role === 'admin' ? 'Admin Panel' : role === 'recruiter' ? 'Recruiter Hub' : 'Student Workspace'}
                             userName={userName}
                             showHomeButton={showStudentTopBar}
                         />

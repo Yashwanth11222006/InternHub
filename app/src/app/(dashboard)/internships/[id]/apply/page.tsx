@@ -8,13 +8,17 @@ import Button from '@/components/ui/Button';
 import TextArea from '@/components/ui/TextArea';
 import InputField from '@/components/ui/InputField';
 import { useToast } from '@/components/ui/Toast';
-import { supabase } from '@/lib/supabase';
-import { ChevronLeft, Send, Sparkles } from 'lucide-react';
+import { api, ApiError } from '@/lib/api';
+import { useAuthContext } from '@/lib/auth-context';
+import { ChevronLeft, Send, Sparkles, Upload, FileText, X } from 'lucide-react';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export default function ApplyPage() {
     const params = useParams();
     const router = useRouter();
     const { showToast } = useToast();
+    const { isAuthenticated, loading: authLoading, session } = useAuthContext();
     const id = params.id as string;
 
     const [internship, setInternship] = useState<any>(null);
@@ -22,98 +26,143 @@ export default function ApplyPage() {
     const [fetching, setFetching] = useState(true);
     const [coverLetter, setCoverLetter] = useState('');
     const [portfolioUrl, setPortfolioUrl] = useState('');
+    const [resumeFile, setResumeFile] = useState<File | null>(null);
+    const [uploadingResume, setUploadingResume] = useState(false);
 
     useEffect(() => {
         const fetchInternship = async () => {
             setFetching(true);
             try {
-                const { data: { user } } = await supabase.auth.getUser();
-                if (!user) {
+                if (!isAuthenticated && !authLoading) {
                     router.push('/login');
                     return;
                 }
 
-                // Parallel fetch internship data and check for existing application
-                const [intRes, existingRes] = await Promise.all([
-                    supabase.from('internships').select('*').eq('id', id).single(),
-                    supabase.from('applications').select('id').eq('internship_id', id).eq('student_id', user.id).maybeSingle()
-                ]);
+                // Fetch internship data
+                const internshipData = await api.internships.getById(id);
 
-                if (intRes.error) throw intRes.error;
-
-                if (existingRes.data) {
-                    showToast('You have already applied for this internship', 'success');
-                    router.push('/activity');
-                    return;
+                // Check if already applied
+                try {
+                    const applications = await api.applications.getMyApplications();
+                    const alreadyApplied = applications.some(app => app.internship_id === id);
+                    if (alreadyApplied) {
+                        showToast('You have already applied for this internship', 'success');
+                        router.push('/activity');
+                        return;
+                    }
+                } catch {
+                    // Ignore - might be a new user
                 }
 
-                if (intRes.data) {
-                    const { data: recData } = await supabase
-                        .from('recruiter_profiles')
-                        .select('company_name')
-                        .eq('id', intRes.data.recruiter_id)
-                        .single();
-
-                    setInternship({
-                        ...intRes.data,
-                        recruiter: recData || { company_name: 'Individual Recruiter' }
-                    });
-                }
+                setInternship({
+                    ...internshipData,
+                    recruiter: { company_name: internshipData.company || 'Individual Recruiter' }
+                });
             } catch (error: any) {
                 console.error('Error initializing apply page:', error.message);
             } finally {
                 setFetching(false);
             }
         };
-        if (id) fetchInternship();
-    }, [id, router, showToast]);
+        if (id && !authLoading) fetchInternship();
+    }, [id, router, showToast, isAuthenticated, authLoading]);
+
+    // Upload resume file (optional - doesn't block application)
+    const uploadResume = async (): Promise<string | null> => {
+        if (!resumeFile || !session?.access_token) return null;
+
+        setUploadingResume(true);
+        try {
+            const formData = new FormData();
+            formData.append('file', resumeFile);
+
+            const res = await fetch(`${API_URL}/api/upload/resume`, {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${session.access_token}`,
+                },
+                body: formData,
+            });
+
+            const json = await res.json();
+            if (!res.ok) {
+                // Don't block - just warn and continue without resume
+                console.warn('Resume upload failed:', json.error);
+                return null;
+            }
+            return json.resume_url;
+        } catch {
+            // Don't block - just warn and continue without resume
+            console.warn('Resume upload network error');
+            return null;
+        } finally {
+            setUploadingResume(false);
+        }
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            if (file.type !== 'application/pdf') {
+                showToast('Please upload a PDF file', 'error');
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                showToast('File size must be less than 5MB', 'error');
+                return;
+            }
+            setResumeFile(file);
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+
+        // Client-side validation
+        if (coverLetter.trim().length < 20) {
+            showToast('Cover letter must be at least 20 characters', 'error');
+            return;
+        }
+
         setLoading(true);
 
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                router.push('/login');
-                return;
+            // Upload resume first if provided
+            let resumeUrl: string | undefined;
+            if (resumeFile) {
+                const url = await uploadResume();
+                if (url) resumeUrl = url;
             }
 
-            const { error } = await supabase.from('applications').insert([{
+            await api.applications.apply({
                 internship_id: id,
-                student_id: user.id,
                 cover_letter: coverLetter,
-                portfolio_link: portfolioUrl,
-                status: 'applied',
-            }]);
-
-            if (error) {
-                // Unique constraint violation (already applied)
-                if (error.code === '23505') {
-                    showToast('You have already applied for this internship!', 'info');
-                    router.push('/activity');
-                    return;
-                }
-                throw error;
-            }
+                portfolio_link: portfolioUrl || undefined,
+                resume_url: resumeUrl,
+            });
 
             showToast('Application submitted successfully!', 'success');
             router.push('/activity');
         } catch (error: any) {
             console.error('Submission error:', error);
+            if (error instanceof ApiError && error.status === 409) {
+                showToast('You have already applied for this internship!', 'info');
+                router.push('/activity');
+                return;
+            }
             showToast(error.message || 'Error submitting application', 'error');
         } finally {
             setLoading(false);
         }
     };
 
-    if (fetching) return <div className="max-w-2xl mx-auto pt-20 animate-pulse bg-white h-96 rounded-[40px]" />;
+    if (fetching) return <div className="max-w-2xl mx-auto pt-20 animate-pulse bg-white h-96 rounded-[40px] border-2 border-black" />;
 
     if (!internship) {
         return (
             <div className="max-w-2xl mx-auto text-center py-20">
-                <h2 className="text-2xl font-black text-slate-900">Internship not found</h2>
-                <Button variant="ghost" className="mt-4" onClick={() => router.back()}>
+                <h2 className="text-2xl font-black text-black">Internship not found</h2>
+                <Button variant="ghost" className="mt-4 text-black" onClick={() => router.back()}>
                     Go Back
                 </Button>
             </div>
@@ -122,41 +171,48 @@ export default function ApplyPage() {
 
     return (
         <div className="max-w-2xl mx-auto animate-slide-up pt-10 pb-20 px-4">
-            <Button variant="ghost" className="mb-6 text-slate-500 hover:text-primary font-bold" onClick={() => router.back()}>
+            <Button variant="ghost" className="mb-6 text-black hover:text-black/70 font-bold" onClick={() => router.back()}>
                 <ChevronLeft className="w-4 h-4 mr-2" /> Cancel Application
             </Button>
 
             {/* ── Internship Summary ── */}
-            <Card className="mb-8 p-8 border-none shadow-sm rounded-[32px] bg-white">
+            <Card className="mb-8 p-8 border-2 border-black shadow-lg rounded-[32px] bg-white">
                 <div className="flex items-center gap-4 mb-2">
-                    <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary font-black uppercase">
+                    <div className="w-12 h-12 bg-black rounded-xl flex items-center justify-center text-white font-black uppercase text-lg">
                         {internship.recruiter?.company_name?.[0] || 'I'}
                     </div>
                     <div>
-                        <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest leading-none mb-1">Applying to</p>
-                        <h2 className="text-lg font-black text-foreground leading-tight">{internship.title}</h2>
-                        <p className="text-sm font-bold text-muted-foreground mt-1">{internship.recruiter?.company_name}</p>
+                        <p className="text-[10px] text-black uppercase font-black tracking-widest leading-none mb-1">Applying to</p>
+                        <h2 className="text-xl font-black text-black leading-tight">{internship.title}</h2>
+                        <p className="text-sm font-bold text-black/60 mt-1">{internship.recruiter?.company_name}</p>
                     </div>
                 </div>
             </Card>
 
             {/* ── Application Form ── */}
-            <Card className="rounded-[40px] border-none shadow-xl p-10 bg-white">
+            <Card className="rounded-[40px] border-2 border-black shadow-2xl p-10 bg-white">
                 <div className="flex items-center gap-3 mb-8">
-                    <Sparkles className="w-6 h-6 text-primary" />
-                    <h1 className="text-2xl font-black text-foreground">Submit Application</h1>
+                    <div className="p-2 bg-black rounded-xl">
+                        <Sparkles className="w-6 h-6 text-white" />
+                    </div>
+                    <h1 className="text-2xl font-black text-black">Submit Application</h1>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-8">
-                    <TextArea
-                        label="Cover Letter"
-                        placeholder="Tell them why you're a great fit for this role..."
-                        rows={8}
-                        required
-                        value={coverLetter}
-                        onChange={(e) => setCoverLetter(e.target.value)}
-                        className="rounded-2xl border-slate-200"
-                    />
+                    <div>
+                        <TextArea
+                            label="Cover Letter"
+                            placeholder="Tell them why you're a great fit for this role... (minimum 20 characters)"
+                            rows={8}
+                            required
+                            value={coverLetter}
+                            onChange={(e) => setCoverLetter(e.target.value)}
+                            className="rounded-2xl border-2 border-black bg-white text-black placeholder:text-black/40 focus:border-black focus:ring-black/20"
+                        />
+                        <p className={`text-xs mt-1 ${coverLetter.length >= 20 ? 'text-green-600' : 'text-red-500'}`}>
+                            {coverLetter.length >= 20 ? '✓' : '✗'} {coverLetter.length}/20 characters
+                        </p>
+                    </div>
 
                     <InputField
                         label="Portfolio / Projects Link"
@@ -164,16 +220,44 @@ export default function ApplyPage() {
                         placeholder="https://github.com/yourusername"
                         value={portfolioUrl}
                         onChange={(e) => setPortfolioUrl(e.target.value)}
-                        className="rounded-xl"
+                        className="rounded-xl border-2 border-black bg-white text-black placeholder:text-black/40 focus:border-black"
                     />
 
                     <div>
-                        <label className="text-xs font-black text-foreground uppercase tracking-widest block mb-3">Resume Source</label>
-                        <div className="p-6 bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl text-center">
-                            <p className="text-sm text-slate-500 font-bold">
-                                We'll use the resume from your <Link href="/profile" className="text-primary hover:underline">profile</Link>.
-                            </p>
-                        </div>
+                        <label className="text-xs font-black text-black uppercase tracking-widest block mb-3">Resume (PDF) <span className="text-black/40 font-normal normal-case">(Optional)</span></label>
+                        {resumeFile ? (
+                            <div className="p-4 bg-gray-50 border-2 border-black rounded-2xl flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <FileText className="w-6 h-6 text-black" />
+                                    <div>
+                                        <p className="text-sm font-bold text-black">{resumeFile.name}</p>
+                                        <p className="text-xs text-black/60">{(resumeFile.size / 1024).toFixed(1)} KB</p>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => setResumeFile(null)}
+                                    className="p-2 hover:bg-black/10 rounded-full transition-colors"
+                                >
+                                    <X className="w-5 h-5 text-black" />
+                                </button>
+                            </div>
+                        ) : (
+                            <label className="p-6 bg-gray-50 border-2 border-dashed border-black/30 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100 hover:border-black transition-colors">
+                                <Upload className="w-8 h-8 text-black/50 mb-2" />
+                                <p className="text-sm text-black/70 font-bold">Click to upload your resume</p>
+                                <p className="text-xs text-black/40 mt-1">PDF only, max 5MB</p>
+                                <input
+                                    type="file"
+                                    accept=".pdf,application/pdf"
+                                    onChange={handleFileChange}
+                                    className="hidden"
+                                />
+                            </label>
+                        )}
+                        <p className="text-xs text-black/50 mt-2">
+                            Skip this — we'll use the resume from your profile if you have one.
+                        </p>
                     </div>
 
                     <div className="flex gap-4 pt-4">
@@ -181,11 +265,15 @@ export default function ApplyPage() {
                             type="submit"
                             variant="primary"
                             size="lg"
-                            loading={loading}
-                            className="flex-1 h-14 rounded-2xl font-black shadow-primary/20 shadow-xl"
+                            loading={loading || uploadingResume}
+                            disabled={coverLetter.trim().length < 20}
+                            className={`flex-1 h-14 rounded-2xl font-black shadow-lg text-white transition-all duration-300 ${coverLetter.trim().length < 20
+                                    ? 'bg-gray-400 cursor-not-allowed'
+                                    : 'bg-black hover:bg-black/80'
+                                }`}
                         >
                             <Send className="w-5 h-5 mr-3" />
-                            {loading ? 'Submitting...' : 'Confirm Application'}
+                            {uploadingResume ? 'Uploading Resume...' : loading ? 'Submitting...' : 'Confirm Application'}
                         </Button>
                     </div>
                 </form>

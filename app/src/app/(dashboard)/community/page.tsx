@@ -8,8 +8,8 @@ export default function CommunityPage() {
         <div className="space-y-6 animate-slide-up">
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-xl font-bold text-foreground">Community</h2>
-                    <p className="text-sm text-muted-foreground mt-1">Share and discover opportunities, resources, and events.</p>
+                    <h2 className="text-xl font-bold text-black">Community</h2>
+                    <p className="text-sm text-black/60 mt-1">Share and discover opportunities, resources, and events.</p>
                 </div>
                 <Link href="/community/new">
                     <Button variant="primary" size="md">
@@ -23,9 +23,13 @@ export default function CommunityPage() {
 
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {communityPosts.map((post) => (
-                    <Card key={post.id} hover>
-                        <h3 className="font-semibold text-foreground mb-2 line-clamp-2">{post.title}</h3>
-                        <p className="text-sm text-muted-foreground mb-3 line-clamp-3">{post.description}</p>
+                    <Card
+                        key={post.id}
+                        hover
+                        className="bg-white border border-black/10 rounded-2xl shadow-sm"
+                    >
+                        <h3 className="font-semibold text-black mb-2 line-clamp-2">{post.title}</h3>
+                        <p className="text-sm text-black/60 mb-3 line-clamp-3">{post.description}</p>
                         <div className="flex flex-wrap gap-1.5 mb-3">
                             {post.tags.map((tag) => (
                                 <span key={tag} className="px-2 py-0.5 rounded-full bg-primary-light text-primary text-xs font-medium">
@@ -33,9 +37,9 @@ export default function CommunityPage() {
                                 </span>
                             ))}
                         </div>
-                        <div className="flex items-center justify-between pt-3 border-t border-border">
-                            <div className="text-xs text-muted-foreground">
-                                <span className="font-medium text-foreground">{post.postedBy}</span>
+                        <div className="flex items-center justify-between pt-3 border-t border-black/10">
+                            <div className="text-xs text-black/50">
+                                <span className="font-medium text-black">{post.postedBy}</span>
                                 <span className="mx-1.5">·</span>
                                 {post.postedDate}
                             </div>

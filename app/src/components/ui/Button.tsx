@@ -19,11 +19,11 @@ const variantStyles: Record<ButtonVariant, string> = {
     primary:
         'bg-primary text-primary-foreground hover:bg-primary-hover shadow-sm',
     secondary:
-        'bg-white text-secondary-foreground border border-border hover:bg-secondary-hover',
+        'bg-muted text-foreground border border-border hover:bg-card-border shadow-sm',
     outline:
         'bg-transparent text-primary border border-primary hover:bg-primary/5',
     ghost:
-        'text-secondary-foreground hover:bg-secondary',
+        'text-foreground hover:bg-muted',
     danger:
         'bg-danger text-white hover:bg-red-700',
 };

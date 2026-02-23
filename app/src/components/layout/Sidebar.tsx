@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     LayoutDashboard as DashIcon,
@@ -13,13 +13,16 @@ import {
     Menu as MenuIcon,
     X as XIcon,
     Briefcase as JobIcon,
-    PlusCircle as AddIcon
+    PlusCircle as AddIcon,
+    Shield as AdminIcon,
+    Users as UsersIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo } from '@/components/ui/Logo';
+import { useAuthContext } from '@/lib/auth-context';
 
 interface SidebarProps {
-    role: 'student' | 'recruiter';
+    role: 'student' | 'recruiter' | 'admin';
 }
 
 const studentMenu = [
@@ -35,17 +38,36 @@ const recruiterMenu = [
     { label: 'Company Profile', icon: ProfileIcon, href: '/recruiter/profile' },
 ];
 
+const adminMenu = [
+    { label: 'Admin Dashboard', icon: AdminIcon, href: '/admin' },
+];
+
 export default function Sidebar({ role }: SidebarProps) {
     const pathname = usePathname();
+    const router = useRouter();
+    const { signOut } = useAuthContext();
     const [collapsed, setCollapsed] = useState(false);
     const [mobileOpen, setMobileOpen] = useState(false);
-    const menu = role === 'student' ? studentMenu : recruiterMenu;
+    const [signingOut, setSigningOut] = useState(false);
+    const menu = role === 'admin' ? adminMenu : role === 'recruiter' ? recruiterMenu : studentMenu;
+
+    const handleSignOut = async () => {
+        setSigningOut(true);
+        try {
+            await signOut();
+            router.push('/');
+        } catch (error) {
+            console.error('Sign out error:', error);
+        } finally {
+            setSigningOut(false);
+        }
+    };
 
     const sidebarContent = (
-        <div className="flex flex-col h-full bg-[#FAF9F6] select-none">
+        <div className="flex flex-col h-full bg-white select-none">
             {/* Logo */}
             <div className="h-[64px] flex items-center px-5 border-b border-[#EDE9E3] shrink-0">
-                <Link href={role === 'student' ? '/dashboard' : '/recruiter/dashboard'} className="flex items-center gap-2">
+                <Link href={role === 'admin' ? '/admin' : role === 'recruiter' ? '/recruiter/dashboard' : '/dashboard'} className="flex items-center gap-2">
                     <Logo size={collapsed ? "sm" : "md"} className={cn("transition-all", collapsed && "scale-90")} />
                 </Link>
             </div>
@@ -57,7 +79,7 @@ export default function Sidebar({ role }: SidebarProps) {
                         "text-[9px] font-black text-slate-400 uppercase tracking-widest transition-opacity",
                         collapsed ? "opacity-0" : "opacity-100"
                     )}>
-                        {role === 'student' ? 'Workspace' : 'Recruitment'}
+                        {role === 'admin' ? 'Administration' : role === 'recruiter' ? 'Recruitment' : 'Workspace'}
                     </p>
                 </div>
                 {menu.map((item) => {
@@ -70,13 +92,13 @@ export default function Sidebar({ role }: SidebarProps) {
                             className={cn(
                                 'flex items-center gap-3 px-3 py-2.5 rounded-xl text-[12px] font-bold transition-all duration-200 group relative',
                                 isActive
-                                    ? 'bg-slate-900 text-white shadow-xl shadow-slate-900/10'
-                                    : 'text-slate-500 hover:bg-white hover:text-slate-900 hover:shadow-sm'
+                                    ? 'bg-white text-black border border-black/10 shadow-sm'
+                                    : 'text-black/60 hover:bg-[#f5f0e8] hover:text-black hover:shadow-sm'
                             )}
                         >
                             <item.icon className={cn(
                                 "w-4.5 h-4.5 shrink-0 transition-transform group-hover:scale-110",
-                                isActive ? "text-white" : "text-slate-400 group-hover:text-slate-900"
+                                isActive ? "text-black" : "text-black/40 group-hover:text-black"
                             )} />
                             <AnimatePresence>
                                 {!collapsed && (
@@ -97,13 +119,14 @@ export default function Sidebar({ role }: SidebarProps) {
 
             {/* Footer Actions */}
             <div className="p-3 border-t border-[#EDE9E3] shrink-0">
-                <Link
-                    href="/"
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-[12px] font-bold text-slate-400 hover:bg-white hover:text-red-500 transition-all group hover:shadow-sm"
+                <button
+                    onClick={handleSignOut}
+                    disabled={signingOut}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[12px] font-bold text-slate-400 hover:bg-white hover:text-red-500 transition-all group hover:shadow-sm disabled:opacity-50"
                 >
                     <LogoutIcon className="w-4.5 h-4.5 shrink-0 group-hover:-translate-x-0.5 transition-transform" />
-                    {!collapsed && <span>Sign Out</span>}
-                </Link>
+                    {!collapsed && <span>{signingOut ? 'Signing out...' : 'Sign Out'}</span>}
+                </button>
             </div>
         </div>
     );

@@ -84,4 +84,35 @@ export interface CommunityPost {
     created_at: string;
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Custom storage that doesn't use locks
+const customStorage = {
+    getItem: (key: string) => {
+        if (typeof window !== 'undefined') {
+            return window.localStorage.getItem(key);
+        }
+        return null;
+    },
+    setItem: (key: string, value: string) => {
+        if (typeof window !== 'undefined') {
+            window.localStorage.setItem(key, value);
+        }
+    },
+    removeItem: (key: string) => {
+        if (typeof window !== 'undefined') {
+            window.localStorage.removeItem(key);
+        }
+    },
+};
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+        storage: customStorage,
+        storageKey: 'intern-hub-auth',
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        flowType: 'pkce',
+        // Disable lock - use simple tab sync 
+        lock: ((name: string, acquireTimeout: number, fn: () => Promise<unknown>) => fn()) as unknown as undefined,
+    },
+});

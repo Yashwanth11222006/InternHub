@@ -4,10 +4,8 @@ import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
-import InputField from '@/components/ui/InputField';
 import Pagination from '@/components/ui/Pagination';
-import { Badge } from '@/components/ui/Badge';
-import { supabase } from '@/lib/supabase';
+import { api, Internship } from '@/lib/api';
 
 const ITEMS_PER_PAGE = 4;
 
@@ -16,33 +14,28 @@ export default function InternshipsPage() {
     const [durationFilter, setDurationFilter] = useState('');
     const [openOnly, setOpenOnly] = useState(false);
     const [page, setPage] = useState(1);
-    const [internshipsList, setInternshipsList] = useState<any[]>([]);
+    const [internshipsList, setInternshipsList] = useState<(Internship & { isOpen: boolean; skills: string[] })[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     React.useEffect(() => {
         const fetchInternships = async () => {
             try {
-                const { data, error } = await supabase
-                    .from('internships')
-                    .select('*, recruiter_profiles(company_name), applications(count)');
-
-                if (error) {
-                    console.error('Error fetching internships:', error);
-                    return;
-                }
+                const data = await api.internships.getAll();
 
                 if (data) {
-                    const processed = data.map(i => ({
-                        ...i,
-                        company: (i.recruiter_profiles as any)?.company_name || 'Individual Recruiter',
-                        isOpen: i.status === 'open',
-                        applicantCount: i.applications?.[0]?.count || 0,
-                        skills: i.skills_required || []
+                    const processed = data.map(internship => ({
+                        ...internship,
+                        company: internship.company || 'Individual Recruiter',
+                        isOpen: internship.status === 'open',
+                        applicantCount: internship.applicant_count || 0,
+                        skills: internship.skills_required || []
                     }));
                     setInternshipsList(processed);
                 }
             } catch (err) {
-                console.error('Unexpected error:', err);
+                console.error('Error fetching internships:', err);
+                setError(err instanceof Error ? err.message : 'Failed to load internships');
             } finally {
                 setLoading(false);
             }

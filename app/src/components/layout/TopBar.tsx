@@ -16,7 +16,7 @@ interface TopBarProps {
 
 export default function TopBar({ title, userName, showHomeButton }: TopBarProps) {
     return (
-        <header className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-border" style={{ height: 'var(--topbar-height)' }}>
+        <header className="sticky top-0 z-20 bg-white/90 backdrop-blur-md border-b border-black/10" style={{ height: 'var(--topbar-height)' }}>
             <div className="h-full flex items-center justify-between px-4 lg:px-8">
                 <div className="flex items-center gap-6">
                     {/* Optional Back to Portal Button for Students */}
@@ -25,7 +25,7 @@ export default function TopBar({ title, userName, showHomeButton }: TopBarProps)
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
-                                className="flex items-center gap-2 px-4 py-1.5 bg-slate-100 text-slate-600 rounded-xl text-xs font-bold hover:bg-primary hover:text-white transition-all shadow-sm"
+                                className="flex items-center gap-2 px-4 py-1.5 bg-white text-black rounded-xl text-xs font-bold border border-black/10 hover:bg-[#f5f0e8] transition-all shadow-sm"
                             >
                                 <LayoutGrid className="w-4 h-4" />
                                 Back to Hub
@@ -38,7 +38,7 @@ export default function TopBar({ title, userName, showHomeButton }: TopBarProps)
                         key={title}
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="text-lg font-semibold text-foreground hidden sm:block"
+                        className="text-lg font-semibold text-black hidden sm:block"
                     >
                         {title}
                     </motion.h1>
@@ -51,7 +51,7 @@ export default function TopBar({ title, userName, showHomeButton }: TopBarProps)
                 {/* Right Side */}
                 <div className="flex items-center gap-3">
                     {/* Notification Bell */}
-                    <button className="relative p-2.5 text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-xl transition-all cursor-pointer group">
+                    <button className="relative p-2.5 text-black/50 hover:text-black hover:bg-black/5 rounded-xl transition-all cursor-pointer group">
                         <Bell className="w-5 h-5 transition-transform group-hover:rotate-12" />
                         <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-danger rounded-full ring-2 ring-white" />
                     </button>
@@ -62,9 +62,9 @@ export default function TopBar({ title, userName, showHomeButton }: TopBarProps)
                     <Dropdown
                         align="right"
                         trigger={
-                            <button className="flex items-center gap-2 p-1 pr-3 rounded-full hover:bg-muted/50 transition-colors cursor-pointer group">
+                            <button className="flex items-center gap-2 p-1 pr-3 rounded-full bg-black border border-black text-white hover:bg-black/90 transition-colors cursor-pointer group">
                                 <Avatar name={userName} size="sm" />
-                                <span className="text-sm font-medium text-foreground hidden md:block">{userName}</span>
+                                <span className="text-sm font-medium text-white hidden md:block">{userName}</span>
                             </button>
                         }
                         items={[

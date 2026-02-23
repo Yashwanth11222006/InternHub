@@ -55,7 +55,7 @@ export default function Dropdown({ trigger, items, align = 'right' }: DropdownPr
                 transition-colors cursor-pointer
                 ${item.danger
                                     ? 'text-danger hover:bg-danger-light'
-                                    : 'text-foreground hover:bg-secondary'}
+                                    : 'text-black hover:bg-black/5'}
               `}
                         >
                             {item.icon}

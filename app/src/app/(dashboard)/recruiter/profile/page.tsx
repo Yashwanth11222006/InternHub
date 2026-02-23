@@ -39,10 +39,10 @@ export default function RecruiterProfilePage() {
 
                     <div className="flex-1 text-center md:text-left">
                         <div className="flex flex-col md:flex-row md:items-center gap-4 mb-4">
-                            <h1 className="text-5xl font-black text-foreground tracking-tight">{currentRecruiter.company}</h1>
+                            <h1 className="text-5xl font-black text-black tracking-tight">{currentRecruiter.company}</h1>
                             <Badge variant="primary" className="w-fit mx-auto md:mx-0 px-4 py-1.5 rounded-full font-black text-[10px] uppercase tracking-widest bg-primary/10 text-primary border-none">Verified Partner</Badge>
                         </div>
-                        <div className="flex flex-wrap justify-center md:justify-start gap-8 text-sm font-bold text-muted-foreground mt-6">
+                        <div className="flex flex-wrap justify-center md:justify-start gap-8 text-sm font-bold text-black/60 mt-6">
                             <div className="flex items-center gap-2.5">
                                 <Globe className="w-4.5 h-4.5 text-primary" /> techcorp.com
                             </div>
@@ -65,15 +65,15 @@ export default function RecruiterProfilePage() {
                             <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600">
                                 <Building2 className="w-6 h-6" />
                             </div>
-                            <h3 className="text-xl font-black text-foreground uppercase tracking-widest text-xs">About the Company</h3>
+                            <h3 className="text-xl font-black text-black uppercase tracking-widest text-xs">About the Company</h3>
                         </div>
                         <div className="prose prose-slate max-w-none">
-                            <p className="text-lg text-muted-foreground leading-relaxed font-medium">
+                            <p className="text-lg text-black/70 leading-relaxed font-medium">
                                 TechCorp Solutions is a global leader in software engineering and cloud infrastructure.
                                 We empower the next generation of engineers by providing high-impact internship opportunities
                                 and a culture of continuous learning.
                             </p>
-                            <p className="mt-6 text-lg text-muted-foreground leading-relaxed font-medium">
+                            <p className="mt-6 text-lg text-black/70 leading-relaxed font-medium">
                                 Founded in 2010, we have grown to become a cornerstone of the tech ecosystem,
                                 partnering with top universities to bridge the gap between education and industry.
                             </p>
@@ -98,17 +98,17 @@ export default function RecruiterProfilePage() {
                         <div className="w-16 h-16 bg-blue-50 rounded-3xl flex items-center justify-center text-blue-600 mx-auto mb-6">
                             <Briefcase className="w-8 h-8" />
                         </div>
-                        <p className="text-4xl font-black text-foreground tracking-tighter">12</p>
-                        <p className="text-xs font-black text-muted-foreground uppercase tracking-[0.2em] mt-2">Active Internships</p>
+                        <p className="text-4xl font-black text-black tracking-tighter">12</p>
+                        <p className="text-xs font-black text-black/60 uppercase tracking-[0.2em] mt-2">Active Internships</p>
                     </Card>
 
                     <Card className="p-8 border-none shadow-sm rounded-[32px] bg-white">
-                        <h3 className="text-sm font-black text-foreground uppercase tracking-widest mb-6">Connect</h3>
+                        <h3 className="text-sm font-black text-black uppercase tracking-widest mb-6">Connect</h3>
                         <div className="space-y-4">
-                            <a href="#" className="flex items-center gap-3 p-4 bg-muted/20 rounded-2xl hover:bg-primary/5 transition-all text-sm font-bold text-foreground">
+                            <a href="#" className="flex items-center gap-3 p-4 bg-muted/20 rounded-2xl hover:bg-primary/5 transition-all text-sm font-bold text-black">
                                 <LinkIcon className="w-4 h-4 text-primary" /> Official Website
                             </a>
-                            <a href="#" className="flex items-center gap-3 p-4 bg-muted/20 rounded-2xl hover:bg-primary/5 transition-all text-sm font-bold text-foreground">
+                            <a href="#" className="flex items-center gap-3 p-4 bg-muted/20 rounded-2xl hover:bg-primary/5 transition-all text-sm font-bold text-black">
                                 <Mail className="w-4 h-4 text-primary" /> recruitment@techcorp.com
                             </a>
                         </div>

@@ -18,7 +18,7 @@ export default function TextArea({
     return (
         <div className="flex flex-col gap-1.5">
             {label && (
-                <label htmlFor={inputId} className="text-sm font-medium text-foreground">
+                <label htmlFor={inputId} className="text-sm font-medium text-black">
                     {label}
                 </label>
             )}
@@ -26,10 +26,10 @@ export default function TextArea({
                 id={inputId}
                 className={`
           w-full px-3.5 py-2.5 text-sm rounded-[var(--radius)] border
-          bg-white text-foreground placeholder:text-muted-foreground
+          bg-white text-black placeholder:text-black/30
           transition-colors duration-150 resize-y min-h-[100px]
-          focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent
-          ${error ? 'border-danger' : 'border-input-border'}
+          focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black
+          ${error ? 'border-danger' : 'border-black/40'}
           disabled:opacity-50 disabled:bg-muted
           ${className}
         `}

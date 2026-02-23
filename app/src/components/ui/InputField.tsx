@@ -22,7 +22,7 @@ export default function InputField({
     return (
         <div className="flex flex-col gap-2">
             {label && (
-                <label htmlFor={inputId} className="text-[12px] font-bold text-foreground/60 uppercase tracking-widest px-1">
+                <label htmlFor={inputId} className="text-[12px] font-bold text-black uppercase tracking-widest px-1">
                     {label}
                 </label>
             )}
@@ -36,10 +36,10 @@ export default function InputField({
                     id={inputId}
                     className={`
                         w-full ${icon ? 'pl-11' : 'px-5'} py-4 text-[14px] font-medium rounded-2xl border
-                        bg-white text-foreground placeholder:text-muted-foreground/40
+                        bg-white text-black placeholder:text-black/30
                         transition-all duration-200
-                        focus:outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary
-                        ${error ? 'border-danger' : 'border-primary/10'}
+                        focus:outline-none focus:ring-4 focus:ring-black/10 focus:border-black
+                        ${error ? 'border-danger' : 'border-black/40'}
                         disabled:opacity-50 disabled:bg-muted
                         ${className}
                     `}

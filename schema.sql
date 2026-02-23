@@ -4,7 +4,7 @@
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     email TEXT UNIQUE NOT NULL,
-    role TEXT CHECK (role IN ('student', 'recruiter')) NOT NULL,
+    role TEXT CHECK (role IN ('student', 'recruiter', 'admin')) NOT NULL,
     account_status TEXT CHECK (account_status IN ('active', 'suspended')) DEFAULT 'active',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -96,3 +96,27 @@ CREATE TRIGGER update_student_profiles_updated_at BEFORE UPDATE ON student_profi
 CREATE TRIGGER update_recruiter_profiles_updated_at BEFORE UPDATE ON recruiter_profiles FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 CREATE TRIGGER update_internships_updated_at BEFORE UPDATE ON internships FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
 CREATE TRIGGER update_applications_updated_at BEFORE UPDATE ON applications FOR EACH ROW EXECUTE PROCEDURE update_updated_at_column();
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- PERFORMANCE INDEXES - Run these for faster queries
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+-- Applications table indexes (most queried)
+CREATE INDEX IF NOT EXISTS idx_applications_student_id ON applications(student_id);
+CREATE INDEX IF NOT EXISTS idx_applications_internship_id ON applications(internship_id);
+CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
+CREATE INDEX IF NOT EXISTS idx_applications_applied_at ON applications(applied_at DESC);
+
+-- Internships table indexes
+CREATE INDEX IF NOT EXISTS idx_internships_recruiter_id ON internships(recruiter_id);
+CREATE INDEX IF NOT EXISTS idx_internships_status ON internships(status);
+CREATE INDEX IF NOT EXISTS idx_internships_created_at ON internships(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_internships_status_created ON internships(status, created_at DESC);
+
+-- Users table indexes
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+
+-- Community posts indexes
+CREATE INDEX IF NOT EXISTS idx_community_posts_posted_by ON community_posts(posted_by);
+CREATE INDEX IF NOT EXISTS idx_community_posts_created_at ON community_posts(created_at DESC);

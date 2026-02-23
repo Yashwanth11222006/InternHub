@@ -8,7 +8,7 @@ import InputField from '@/components/ui/InputField';
 import TextArea from '@/components/ui/TextArea';
 import TagInput from '@/components/ui/TagInput';
 import { useToast } from '@/components/ui/Toast';
-import { supabase } from '@/lib/supabase';
+import { api } from '@/lib/api';
 import { Send, ChevronLeft, Sparkles, Briefcase, Target, FileText, Calendar } from 'lucide-react';
 
 export default function CreateInternshipPage() {
@@ -31,14 +31,7 @@ export default function CreateInternshipPage() {
         setLoading(true);
 
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                showToast('You must be logged in to post an internship', 'error');
-                return;
-            }
-
-            const { error } = await supabase.from('internships').insert([{
-                recruiter_id: user.id,
+            await api.internships.create({
                 title,
                 duration,
                 location,
@@ -46,11 +39,8 @@ export default function CreateInternshipPage() {
                 skills_required: skills,
                 eligibility,
                 description,
-                deadline,
-                status: 'open'
-            }]);
-
-            if (error) throw error;
+                deadline
+            });
 
             showToast('Internship published successfully!', 'success');
             router.push('/recruiter/internships');
@@ -68,7 +58,7 @@ export default function CreateInternshipPage() {
                 <Button variant="ghost" size="sm" className="h-10 w-10 p-0 rounded-xl" onClick={() => router.back()}>
                     <ChevronLeft className="w-5 h-5" />
                 </Button>
-                <h1 className="text-3xl font-black text-[#383838] tracking-tight font-sans">New Internship</h1>
+                <h1 className="text-3xl font-black text-black tracking-tight font-sans">New Internship</h1>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -78,7 +68,7 @@ export default function CreateInternshipPage() {
                         <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
                             <Briefcase className="w-5 h-5" />
                         </div>
-                        <h2 className="text-lg font-black text-[#383838] tracking-tight">Basic Information</h2>
+                        <h2 className="text-lg font-black text-black tracking-tight">Basic Information</h2>
                     </div>
 
                     <div className="grid gap-6">
@@ -125,7 +115,7 @@ export default function CreateInternshipPage() {
                         <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center text-amber-500">
                             <Target className="w-5 h-5" />
                         </div>
-                        <h2 className="text-lg font-black text-[#383838] tracking-tight">Requirements</h2>
+                        <h2 className="text-lg font-black text-black tracking-tight">Requirements</h2>
                     </div>
 
                     <div className="grid gap-6">
@@ -151,7 +141,7 @@ export default function CreateInternshipPage() {
                         <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-500">
                             <FileText className="w-5 h-5" />
                         </div>
-                        <h2 className="text-lg font-black text-[#383838] tracking-tight">Role Description</h2>
+                        <h2 className="text-lg font-black text-black tracking-tight">Role Description</h2>
                     </div>
 
                     <TextArea
@@ -171,7 +161,7 @@ export default function CreateInternshipPage() {
                         <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center text-rose-500">
                             <Calendar className="w-5 h-5" />
                         </div>
-                        <h2 className="text-lg font-black text-[#383838] tracking-tight">Application Deadline</h2>
+                        <h2 className="text-lg font-black text-black tracking-tight">Application Deadline</h2>
                     </div>
 
                     <InputField
@@ -186,7 +176,7 @@ export default function CreateInternshipPage() {
 
                 {/* ── Actions ── */}
                 <div className="flex gap-4 pt-4">
-                    <Button type="button" variant="ghost" className="h-14 px-8 rounded-2xl font-black text-slate-400 hover:text-slate-600" onClick={() => router.back()}>
+                    <Button type="button" variant="ghost" className="h-14 px-8 rounded-2xl font-black text-black/60 hover:text-black" onClick={() => router.back()}>
                         Discard
                     </Button>
                     <Button type="submit" variant="primary" size="lg" loading={loading} className="flex-1 h-14 rounded-2xl font-black shadow-xl shadow-primary/20">

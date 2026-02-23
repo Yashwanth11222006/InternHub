@@ -4,38 +4,28 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
-import { supabase } from '@/lib/supabase';
+import { api, Internship } from '@/lib/api';
 import { Plus, Edit2, Users, Clock, MapPin, Wallet, Calendar, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+interface InternshipWithCount extends Internship {
+    applicantCount: number;
+}
+
 export default function RecruiterInternshipsPage() {
-    const [internships, setInternships] = useState<any[]>([]);
+    const [internships, setInternships] = useState<InternshipWithCount[]>([]);
     const [loading, setLoading] = useState(true);
-    const [user, setUser] = useState<any>(null);
 
     useEffect(() => {
         const fetchMyInternships = async () => {
             setLoading(true);
             try {
-                const { data: { user: authUser } } = await supabase.auth.getUser();
-                if (!authUser) return;
-                setUser(authUser);
-
-                const { data, error } = await supabase
-                    .from('internships')
-                    .select('*, applications(count)')
-                    .eq('recruiter_id', authUser.id)
-                    .order('created_at', { ascending: false });
-
-                if (error) throw error;
-
-                if (data) {
-                    const processed = data.map(i => ({
-                        ...i,
-                        applicantCount: Array.isArray(i.applications) ? (i.applications[0]?.count || 0) : (i.applications?.count || 0)
-                    }));
-                    setInternships(processed);
-                }
+                const data = await api.recruiter.getMyInternships();
+                const processed = data.map(i => ({
+                    ...i,
+                    applicantCount: i.applicant_count || 0
+                }));
+                setInternships(processed);
             } catch (error: any) {
                 console.error('Error fetching my internships:', error.message);
             } finally {
@@ -60,8 +50,8 @@ export default function RecruiterInternshipsPage() {
         <div className="space-y-8 animate-slide-up pb-20">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-black text-[#383838] tracking-tight font-sans">My Internship Listings</h1>
-                    <p className="text-sm font-bold text-slate-400 mt-1 uppercase tracking-widest">Manage and track your active roles</p>
+                    <h1 className="text-3xl font-black text-black tracking-tight font-sans">My Internship Listings</h1>
+                    <p className="text-sm font-bold text-black/60 mt-1 uppercase tracking-widest">Manage and track your active roles</p>
                 </div>
                 <Link href="/recruiter/internships/new">
                     <Button variant="primary" size="lg" className="rounded-2xl h-14 px-8 font-black shadow-xl shadow-primary/20">
@@ -74,10 +64,10 @@ export default function RecruiterInternshipsPage() {
             {internships.length === 0 ? (
                 <Card className="p-20 text-center border-dashed border-2 bg-slate-50/50 rounded-[40px]">
                     <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
-                        <AlertCircle className="w-8 h-8 text-slate-300" />
+                        <AlertCircle className="w-8 h-8 text-black/30" />
                     </div>
-                    <h3 className="text-xl font-black text-slate-900 mb-2">No internships found</h3>
-                    <p className="text-slate-500 font-bold mb-8">You haven't posted any internships yet.</p>
+                    <h3 className="text-xl font-black text-black mb-2">No internships found</h3>
+                    <p className="text-black/60 font-bold mb-8">You haven't posted any internships yet.</p>
                     <Link href="/recruiter/internships/new">
                         <Button variant="primary" className="rounded-xl px-8 font-black">Get Started</Button>
                     </Link>
@@ -89,7 +79,7 @@ export default function RecruiterInternshipsPage() {
                             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                                 <div className="flex-1 space-y-4">
                                     <div className="flex items-center gap-3">
-                                        <h3 className="text-xl font-black text-[#383838] tracking-tight font-sans">{internship.title}</h3>
+                                        <h3 className="text-xl font-black text-black tracking-tight font-sans">{internship.title}</h3>
                                         <span className={cn(
                                             "text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-lg",
                                             internship.status === 'open'
@@ -101,19 +91,19 @@ export default function RecruiterInternshipsPage() {
                                     </div>
 
                                     <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-                                        <div className="flex items-center gap-2 text-slate-500 font-bold text-sm">
+                                        <div className="flex items-center gap-2 text-black/60 font-bold text-sm">
                                             <Clock className="w-4 h-4" />
                                             {internship.duration || 'Flexible'}
                                         </div>
-                                        <div className="flex items-center gap-2 text-slate-500 font-bold text-sm">
+                                        <div className="flex items-center gap-2 text-black/60 font-bold text-sm">
                                             <MapPin className="w-4 h-4" />
                                             {internship.location || 'Remote'}
                                         </div>
-                                        <div className="flex items-center gap-2 text-slate-500 font-bold text-sm">
+                                        <div className="flex items-center gap-2 text-black/60 font-bold text-sm">
                                             <Wallet className="w-4 h-4" />
                                             {internship.stipend || 'Competitive'}
                                         </div>
-                                        <div className="flex items-center gap-2 text-slate-500 font-bold text-sm">
+                                        <div className="flex items-center gap-2 text-black/60 font-bold text-sm">
                                             <Calendar className="w-4 h-4" />
                                             Deadline: {internship.deadline ? new Date(internship.deadline).toLocaleDateString() : 'TBD'}
                                         </div>
@@ -121,7 +111,7 @@ export default function RecruiterInternshipsPage() {
 
                                     <div className="flex flex-wrap gap-2 pt-1">
                                         {(internship.skills_required || []).slice(0, 5).map((skill: string) => (
-                                            <span key={skill} className="px-3 py-1 bg-slate-50 border border-slate-100 rounded-lg text-[11px] font-black text-slate-400 uppercase tracking-tight">
+                                            <span key={skill} className="px-3 py-1 bg-slate-50 border border-slate-100 rounded-lg text-[11px] font-black text-black/60 uppercase tracking-tight">
                                                 {skill}
                                             </span>
                                         ))}

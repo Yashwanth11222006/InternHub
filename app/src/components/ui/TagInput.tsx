@@ -31,18 +31,18 @@ export default function TagInput({ label, tags, onChange, placeholder = 'Type an
 
     return (
         <div className="flex flex-col gap-1.5">
-            {label && <label className="text-sm font-medium text-foreground">{label}</label>}
-            <div className="flex flex-wrap gap-2 p-2.5 rounded-[var(--radius)] border border-input-border bg-white focus-within:ring-2 focus-within:ring-ring focus-within:border-transparent transition-colors">
+            {label && <label className="text-sm font-medium text-black">{label}</label>}
+            <div className="flex flex-wrap gap-2 p-2.5 rounded-[var(--radius)] border border-black/40 bg-white focus-within:ring-2 focus-within:ring-black/10 focus-within:border-black transition-colors shadow-inner">
                 {tags.map((tag, i) => (
                     <span
                         key={i}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-primary-light text-primary text-xs font-medium"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white text-black text-xs font-medium border border-black/30"
                     >
                         {tag}
                         <button
                             type="button"
                             onClick={() => removeTag(i)}
-                            className="hover:text-primary-hover ml-0.5 cursor-pointer"
+                            className="hover:text-black ml-0.5 cursor-pointer"
                         >
                             ×
                         </button>
@@ -61,7 +61,7 @@ export default function TagInput({ label, tags, onChange, placeholder = 'Type an
                         }
                     }}
                     placeholder={tags.length === 0 ? placeholder : ''}
-                    className="flex-1 min-w-[120px] text-sm outline-none bg-transparent placeholder:text-muted-foreground"
+                    className="flex-1 min-w-[120px] text-sm outline-none bg-transparent text-black placeholder:text-black/30"
                 />
             </div>
         </div>

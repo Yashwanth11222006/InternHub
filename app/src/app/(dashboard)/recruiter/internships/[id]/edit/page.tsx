@@ -8,7 +8,7 @@ import InputField from '@/components/ui/InputField';
 import TextArea from '@/components/ui/TextArea';
 import TagInput from '@/components/ui/TagInput';
 import { useToast } from '@/components/ui/Toast';
-import { supabase } from '@/lib/supabase';
+import { api, Internship } from '@/lib/api';
 import { Save, ChevronLeft, Briefcase, Target, FileText, Calendar, Loader2, Power } from 'lucide-react';
 
 export default function EditInternshipPage() {
@@ -34,13 +34,7 @@ export default function EditInternshipPage() {
     useEffect(() => {
         const fetchInternship = async () => {
             try {
-                const { data, error } = await supabase
-                    .from('internships')
-                    .select('*')
-                    .eq('id', id)
-                    .single();
-
-                if (error) throw error;
+                const data = await api.internships.getById(id);
 
                 if (data) {
                     setTitle(data.title || '');
@@ -69,22 +63,17 @@ export default function EditInternshipPage() {
         setLoading(true);
 
         try {
-            const { error } = await supabase
-                .from('internships')
-                .update({
-                    title,
-                    duration,
-                    location,
-                    stipend,
-                    skills_required: skills,
-                    eligibility,
-                    description,
-                    deadline,
-                    status
-                })
-                .eq('id', id);
-
-            if (error) throw error;
+            await api.internships.update(id, {
+                title,
+                duration,
+                location,
+                stipend,
+                skills_required: skills,
+                eligibility,
+                description,
+                deadline,
+                status
+            });
 
             showToast('Changes saved successfully!', 'success');
             router.push('/recruiter/internships');
@@ -100,12 +89,7 @@ export default function EditInternshipPage() {
         const nextStatus = status === 'open' ? 'closed' : 'open';
         setLoading(true);
         try {
-            const { error } = await supabase
-                .from('internships')
-                .update({ status: nextStatus })
-                .eq('id', id);
-
-            if (error) throw error;
+            await api.internships.update(id, { status: nextStatus });
             setStatus(nextStatus);
             showToast(`Internship ${nextStatus === 'open' ? 'reopened' : 'closed'} successfully!`, 'success');
         } catch (error: any) {
@@ -119,7 +103,7 @@ export default function EditInternshipPage() {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
                 <Loader2 className="w-10 h-10 text-primary animate-spin" />
-                <p className="font-black text-slate-400 uppercase tracking-widest text-xs">Loading Details...</p>
+                <p className="font-black text-black/60 uppercase tracking-widest text-xs">Loading Details...</p>
             </div>
         );
     }
@@ -131,7 +115,7 @@ export default function EditInternshipPage() {
                     <Button variant="ghost" size="sm" className="h-10 w-10 p-0 rounded-xl" onClick={() => router.back()}>
                         <ChevronLeft className="w-5 h-5" />
                     </Button>
-                    <h1 className="text-3xl font-black text-[#383838] tracking-tight font-sans">Edit Listing</h1>
+                    <h1 className="text-3xl font-black text-black tracking-tight font-sans">Edit Listing</h1>
                 </div>
 
                 <Button
@@ -153,7 +137,7 @@ export default function EditInternshipPage() {
                         <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
                             <Briefcase className="w-5 h-5" />
                         </div>
-                        <h2 className="text-lg font-black text-[#383838] tracking-tight">Basic Information</h2>
+                        <h2 className="text-lg font-black text-black tracking-tight">Basic Information</h2>
                     </div>
 
                     <div className="grid gap-6">
@@ -196,7 +180,7 @@ export default function EditInternshipPage() {
                         <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center text-amber-500">
                             <Target className="w-5 h-5" />
                         </div>
-                        <h2 className="text-lg font-black text-[#383838] tracking-tight">Requirements</h2>
+                        <h2 className="text-lg font-black text-black tracking-tight">Requirements</h2>
                     </div>
 
                     <div className="grid gap-6">
@@ -220,7 +204,7 @@ export default function EditInternshipPage() {
                         <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-500">
                             <FileText className="w-5 h-5" />
                         </div>
-                        <h2 className="text-lg font-black text-[#383838] tracking-tight">Role Description</h2>
+                        <h2 className="text-lg font-black text-black tracking-tight">Role Description</h2>
                     </div>
 
                     <TextArea
@@ -239,7 +223,7 @@ export default function EditInternshipPage() {
                         <div className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center text-rose-500">
                             <Calendar className="w-5 h-5" />
                         </div>
-                        <h2 className="text-lg font-black text-[#383838] tracking-tight">Application Deadline</h2>
+                        <h2 className="text-lg font-black text-black tracking-tight">Application Deadline</h2>
                     </div>
 
                     <InputField
@@ -278,7 +262,7 @@ export default function EditInternshipPage() {
                         Delete Listing
                     </Button>
                     <div className="flex-1 flex gap-4">
-                        <Button type="button" variant="ghost" className="flex-1 h-14 rounded-2xl font-black text-slate-400 hover:text-slate-600" onClick={() => router.back()}>
+                        <Button type="button" variant="ghost" className="flex-1 h-14 rounded-2xl font-black text-black/60 hover:text-black" onClick={() => router.back()}>
                             Cancel
                         </Button>
                         <Button type="submit" variant="primary" size="lg" loading={loading} className="flex-[2] h-14 rounded-2xl font-black shadow-xl shadow-primary/20">

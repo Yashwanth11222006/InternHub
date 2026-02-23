@@ -20,12 +20,13 @@ import InputField from '@/components/ui/InputField';
 import TextArea from '@/components/ui/TextArea';
 import TagInput from '@/components/ui/TagInput';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { api } from '@/lib/api';
 
 export default function CreateInternshipPage() {
     const router = useRouter();
     const [skills, setSkills] = useState<string[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState('');
 
     // Form states
     const [title, setTitle] = useState('');
@@ -39,32 +40,23 @@ export default function CreateInternshipPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
+        setError('');
 
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                router.push('/login');
-                return;
-            }
-
-            const { error } = await supabase.from('internships').insert([{
+            await api.internships.create({
                 title,
                 duration,
                 location,
                 stipend,
                 eligibility,
                 description,
-                deadline,
+                deadline: deadline || undefined,
                 skills_required: skills,
-                recruiter_id: user.id,
-                status: 'open',
-            }]);
-
-            if (error) throw error;
+            });
 
             router.push('/recruiter/dashboard');
-        } catch (error: any) {
-            alert(error.message || 'Error creating internship');
+        } catch (err: any) {
+            setError(err.message || 'Error creating internship');
         } finally {
             setIsSubmitting(false);
         }
@@ -73,18 +65,23 @@ export default function CreateInternshipPage() {
     return (
         <div className="max-w-4xl mx-auto space-y-12 pb-20">
             <div className="text-center md:text-left">
-                <h1 className="text-4xl font-black text-foreground tracking-tight">Create New Internship</h1>
-                <p className="text-muted-foreground mt-2 font-medium italic">Reach qualified talent by providing clear and detailed information.</p>
+                <h1 className="text-4xl font-black text-black tracking-tight">Create New Internship</h1>
+                <p className="text-black/60 mt-2 font-medium italic">Reach qualified talent by providing clear and detailed information.</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-10">
+                {error && (
+                    <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-600 text-sm">
+                        {error}
+                    </div>
+                )}
                 {/* ── Basic Info ── */}
                 <Card className="p-10 border-none shadow-sm bg-white rounded-[40px] space-y-8">
                     <div className="flex items-center gap-4 mb-2">
                         <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
                             <Briefcase className="w-6 h-6" />
                         </div>
-                        <h2 className="text-xl font-black text-foreground uppercase tracking-widest text-sm">Basic Information</h2>
+                        <h2 className="text-xl font-black text-black uppercase tracking-widest text-sm">Basic Information</h2>
                     </div>
 
                     <div className="grid md:grid-cols-2 gap-8">
@@ -128,12 +125,12 @@ export default function CreateInternshipPage() {
                         <div className="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600">
                             <Target className="w-6 h-6" />
                         </div>
-                        <h2 className="text-xl font-black text-foreground uppercase tracking-widest text-sm">Requirements & Skills</h2>
+                        <h2 className="text-xl font-black text-black uppercase tracking-widest text-sm">Requirements & Skills</h2>
                     </div>
 
                     <div className="space-y-8">
                         <div>
-                            <label className="text-sm font-black text-foreground uppercase tracking-[0.1em] mb-3 block">Technical Skills</label>
+                            <label className="text-sm font-black text-black uppercase tracking-[0.1em] mb-3 block">Technical Skills</label>
                             <TagInput
                                 tags={skills}
                                 onChange={setSkills}
@@ -155,7 +152,7 @@ export default function CreateInternshipPage() {
                         <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600">
                             <FileText className="w-6 h-6" />
                         </div>
-                        <h2 className="text-xl font-black text-foreground uppercase tracking-widest text-sm">Detailed Description</h2>
+                        <h2 className="text-xl font-black text-black uppercase tracking-widest text-sm">Detailed Description</h2>
                     </div>
 
                     <TextArea
@@ -174,7 +171,7 @@ export default function CreateInternshipPage() {
                         <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600">
                             <Calendar className="w-6 h-6" />
                         </div>
-                        <h2 className="text-xl font-black text-foreground uppercase tracking-widest text-sm">Application Deadline</h2>
+                        <h2 className="text-xl font-black text-black uppercase tracking-widest text-sm">Application Deadline</h2>
                     </div>
 
                     <div className="max-w-xs">
